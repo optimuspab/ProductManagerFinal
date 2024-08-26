@@ -36,3 +36,6 @@ coverage/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# MongoDB Certificate
+/src/config/X509-cert-6368823534329847455.pem

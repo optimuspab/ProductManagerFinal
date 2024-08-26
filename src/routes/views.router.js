@@ -1,6 +1,5 @@
-import { Router } from 'express';
-import productManager from '../manager/productManager.js';
-import { io } from '../app.js';
+const { Router } = require('express');
+const productManager = require('../manager/productManager');
 
 const router = Router();
 
@@ -19,10 +18,16 @@ router.post('/realtimeproducts', (req, res) => {
     const newProduct = productManager.addProduct(title, 'Descripción', price, 'Código', 10, 'Categoría');
     
     if (newProduct.success) {
-        io.emit('products', productManager.getProducts());
+        req.io.emit('products', productManager.getProducts());
     }
 
     res.redirect('/realtimeproducts');
 });
 
-export default router;
+module.exports = (io) => {
+    return (req, res, next) => {
+        req.io = io;
+        next();
+    };
+};
+

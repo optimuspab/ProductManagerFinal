@@ -2,12 +2,15 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const app = require('./src/app');
 const productManager = require('./src/manager/productManager');
+const viewsRouter = require('./src/routes/views.router');
 
 const port = process.env.PORT || 8080;
 
 const server = createServer(app);
 
 const io = new Server(server);
+
+app.use('/', viewsRouter(io));
 
 io.on('connection', (socket) => {
     console.log('Nuevo cliente conectado');
@@ -38,4 +41,3 @@ io.on('connection', (socket) => {
 server.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
-
