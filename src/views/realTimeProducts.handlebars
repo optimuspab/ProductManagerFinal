@@ -107,24 +107,66 @@
             document.getElementById('thumbnail').value = '';
         });
 
+        //socket.on('products', products => {
+        //    const productList = document.getElementById('products-list');
+        //    productList.innerHTML = '';
+        //    products.forEach(product => {
+        //        const productCard = `
+        //        <div class="col-md-4">
+        //            <div class="card mb-4">
+        //                <div class="card-body">
+        //                    <h5 class="card-title">${product.title}</h5>
+        //                    <p class="card-text">${product.description}</p>
+        //                    <p class="card-text"><strong>Precio: </strong>$${product.price}</p>
+        //                    <p class="card-text"><strong>Stock: </strong>${product.stock}</p>
+        //                    <p class="card-text"><strong>Categoría: </strong>${product.category}</p>
+        //                    ${product.thumbnails && product.thumbnails.length > 0 ? `<img src="${product.thumbnails[0]}" class="img-fluid mt-2" alt="${product.title}">` : ''}
+        //                    <button class="btn btn-danger mt-3 delete-product" data-id="${product._id}">Eliminar</button>
+        //                </div>
+        //            </div>
+        //        </div>`;
+        //        productList.innerHTML += productCard;
+        //    });
+        //
+        //    document.querySelectorAll('.delete-product').forEach(button => {
+        //        button.addEventListener('click', function () {
+        //            const productId = this.getAttribute('data-id');
+        //            console.log('Deleting product with ID:', productId);
+        //
+        //            fetch(`/api/products/${productId}`, {
+        //                method: 'DELETE'
+        //            })
+        //                .then(response => {
+        //                    if (response.ok) {
+        //                        socket.emit('product-deleted', productId);
+        //                    }
+        //                })
+        //                .catch(error => console.error('Error al eliminar el producto:', error));
+        //        });
+        //    });
+        //});
         socket.on('products', products => {
+            // Aquí deberías recibir un objeto que contiene 'docs' si estás usando paginación
             const productList = document.getElementById('products-list');
             productList.innerHTML = '';
-            products.forEach(product => {
+
+            const productArray = Array.isArray(products.docs) ? products.docs : products; // Manejar 'docs' o array directo
+
+            productArray.forEach(product => {
                 const productCard = `
-                <div class="col-md-4">
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">${product.title}</h5>
-                            <p class="card-text">${product.description}</p>
-                            <p class="card-text"><strong>Precio: </strong>$${product.price}</p>
-                            <p class="card-text"><strong>Stock: </strong>${product.stock}</p>
-                            <p class="card-text"><strong>Categoría: </strong>${product.category}</p>
-                            ${product.thumbnails && product.thumbnails.length > 0 ? `<img src="${product.thumbnails[0]}" class="img-fluid mt-2" alt="${product.title}">` : ''}
-                            <button class="btn btn-danger mt-3 delete-product" data-id="${product._id}">Eliminar</button>
-                        </div>
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">${product.title}</h5>
+                        <p class="card-text">${product.description}</p>
+                        <p class="card-text"><strong>Precio: </strong>$${product.price}</p>
+                        <p class="card-text"><strong>Stock: </strong>${product.stock}</p>
+                        <p class="card-text"><strong>Categoría: </strong>${product.category}</p>
+                        ${product.thumbnails && product.thumbnails.length > 0 ? `<img src="${product.thumbnails[0]}" class="img-fluid mt-2" alt="${product.title}">` : ''}
+                        <button class="btn btn-danger mt-3 delete-product" data-id="${product._id}">Eliminar</button>
                     </div>
-                </div>`;
+                </div>
+            </div>`;
                 productList.innerHTML += productCard;
             });
 
@@ -145,6 +187,7 @@
                 });
             });
         });
+
     </script>
 </body>
 

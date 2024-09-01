@@ -19,15 +19,35 @@ class ProductManager {
         }
     }         
 
-    async getProducts(limit) {
+    //async getProducts(limit) {
+    //    try {
+    //        const products = limit ? await Product.find().limit(limit) : await Product.find();
+    //        return products;
+    //    } catch (error) {
+    //        console.error('Error al obtener productos:', error);
+    //        return [];
+    //    }
+    //}
+
+    async getProducts(filter = {}, options = {}) {
         try {
-            const products = limit ? await Product.find().limit(limit) : await Product.find();
-            return products;
+            const products = await Product.paginate(filter, options);
+            return {
+                docs: products.docs,
+                totalDocs: products.totalDocs,
+                totalPages: products.totalPages,
+                page: products.page,
+                hasPrevPage: products.hasPrevPage,
+                hasNextPage: products.hasNextPage,
+                prevPage: products.prevPage,
+                nextPage: products.nextPage
+            };
         } catch (error) {
             console.error('Error al obtener productos:', error);
-            return [];
+            return { docs: [], totalDocs: 0, totalPages: 0, page: 1, hasPrevPage: false, hasNextPage: false };
         }
     }
+    
 
     async getProductById(id) {
         try {
