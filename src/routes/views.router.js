@@ -6,6 +6,7 @@ const router = Router();
 router.get('/', async (req, res) => {
     try {
         const products = await productManager.getProducts();
+        console.log(products);
         res.render('home', { products });
     } catch (error) {
         res.status(500).send('Error al cargar productos');

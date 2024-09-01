@@ -1,20 +1,14 @@
 const Cart = require('../models/carts');
-const { v4: uuidv4 } = require('uuid');
 
 class CartManager {
-    constructor() {
-        this.carts = [];
-    }
-
     async createCart() {
         const newCart = new Cart({
-            id: uuidv4(),
-            products: []
+            products: []  // Inicia con un carrito vacío
         });
 
         try {
-            await newCart.save();
-            return newCart;
+            const savedCart = await newCart.save();
+            return { success: true, cart: savedCart };
         } catch (error) {
             console.error('Error al crear el carrito:', error);
             return { success: false, message: 'Error al crear el carrito' };
@@ -23,7 +17,7 @@ class CartManager {
 
     async getCartById(id) {
         try {
-            const cart = await Cart.findOne({ id }).populate('products.product').exec();
+            const cart = await Cart.findById(id).populate('products.product').exec();
             if (!cart) {
                 return { success: false, message: 'Carrito no encontrado' };
             }
@@ -59,5 +53,4 @@ class CartManager {
     }
 }
 
-const cartManager = new CartManager();
-module.exports = cartManager;
+module.exports = new CartManager();

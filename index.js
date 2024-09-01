@@ -9,7 +9,7 @@ const port = process.env.PORT || 8080;
 const server = createServer(app);
 const io = new Server(server);
 
-app.use('/', viewsRouter); // Sin pasar `io`
+app.use('/', viewsRouter);
 
 io.on('connection', async (socket) => {
     console.log('Nuevo cliente conectado');

@@ -17,7 +17,7 @@
         <div class="d-flex justify-content-center">
             <div class="card mb-4" style="width: 18rem;">
                 <div class="card-body">
-                    <form id="product-form">
+                    <form id="product-form" enctype="multipart/form-data">
                         <div class="mb-3">
                             <label for="title" class="form-label">Nombre del producto</label>
                             <input type="text" class="form-control" id="title" placeholder="Nombre del producto"
@@ -41,7 +41,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="thumbnail" class="form-label">Imagen</label>
-                            <input class="form-control" type="file" id="thumbnail">
+                            <input class="form-control" type="file" id="thumbnail" name="thumbnail">
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Agregar Producto</button>
                     </form>
@@ -68,7 +68,7 @@
                         {{#if this.thumbnail}}
                         <img src="{{this.thumbnail}}" class="img-fluid mt-2" alt="{{this.title}}">
                         {{/if}}
-                        <button class="btn btn-danger mt-3 delete-product" data-id="{{this.id}}">Eliminar</button>
+                        <button class="btn btn-danger mt-3 delete-product" data-id="{{this._id}}">Eliminar</button>
                     </div>
                 </div>
             </div>
@@ -81,18 +81,24 @@
 
         document.getElementById('product-form').addEventListener('submit', function (e) {
             e.preventDefault();
-            const title = document.getElementById('title').value;
-            const description = document.getElementById('description').value;
-            const price = document.getElementById('price').value;
-            const stock = document.getElementById('stock').value;
-            const category = document.getElementById('category').value;
-            const thumbnail = document.getElementById('thumbnail').value;
 
-            console.log({ title, description, price, stock, category, thumbnail });
+            const formData = new FormData();
+            formData.append('title', document.getElementById('title').value);
+            formData.append('description', document.getElementById('description').value);
+            formData.append('price', document.getElementById('price').value);
+            formData.append('stock', document.getElementById('stock').value);
+            formData.append('category', document.getElementById('category').value);
+            formData.append('thumbnail', document.getElementById('thumbnail').files[0]);
 
-            socket.emit('new-product', { title, description, price, stock, category, thumbnail });
+            fetch('/api/products', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    socket.emit('new-product', data.product);
+                });
 
-            // Limpiar el formulario
             document.getElementById('title').value = '';
             document.getElementById('description').value = '';
             document.getElementById('price').value = '';
@@ -101,7 +107,6 @@
             document.getElementById('thumbnail').value = '';
         });
 
-        // Actualizar la lista de productos en tiempo real
         socket.on('products', products => {
             const productList = document.getElementById('products-list');
             productList.innerHTML = '';
@@ -115,8 +120,8 @@
                             <p class="card-text"><strong>Precio: </strong>$${product.price}</p>
                             <p class="card-text"><strong>Stock: </strong>${product.stock}</p>
                             <p class="card-text"><strong>Categoría: </strong>${product.category}</p>
-                            ${product.thumbnail ? `<img src="${product.thumbnail}" class="img-fluid mt-2" alt="${product.title}">` : ''}
-                            <button class="btn btn-danger mt-3 delete-product" data-id="${product.id}">Eliminar</button>
+                            ${product.thumbnails && product.thumbnails.length > 0 ? `<img src="${product.thumbnails[0]}" class="img-fluid mt-2" alt="${product.title}">` : ''}
+                            <button class="btn btn-danger mt-3 delete-product" data-id="${product._id}">Eliminar</button>
                         </div>
                     </div>
                 </div>`;
@@ -126,7 +131,17 @@
             document.querySelectorAll('.delete-product').forEach(button => {
                 button.addEventListener('click', function () {
                     const productId = this.getAttribute('data-id');
-                    socket.emit('delete-product', productId);
+                    console.log('Deleting product with ID:', productId);
+
+                    fetch(`/api/products/${productId}`, {
+                        method: 'DELETE'
+                    })
+                        .then(response => {
+                            if (response.ok) {
+                                socket.emit('product-deleted', productId);
+                            }
+                        })
+                        .catch(error => console.error('Error al eliminar el producto:', error));
                 });
             });
         });

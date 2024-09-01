@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const productManager = require('../manager/productManager');
+const upload = require('../middlewares/multerConfig.js');
 
 router.get('/', async (req, res) => {
     const { page = 1, limit = 10, sort, category, stock } = req.query;
@@ -50,14 +51,22 @@ router.get('/:pid', (req, res) => {
     }
 });
 
-router.post('/', (req, res) => {
-    const { title, description, price, code, stock, category, thumbnails } = req.body;
-    const result = productManager.addProduct(title, description, price, code, stock, category, thumbnails);
+router.post('/', upload.single('thumbnail'), async (req, res) => {
+    const { title, description, price, stock, category } = req.body;
+    const thumbnail = req.file ? `/files/uploads/${req.file.filename}` : req.body.thumbnail;
+
+    if (!title || !description || !price || !stock || !category) {
+        return res.status(400).json({ message: 'Todos los campos son obligatorios excepto la imagen.' });
+    }
+
+    const thumbnails = thumbnail ? [thumbnail] : [];
+
+    const result = await productManager.addProduct(title, description, price, stock, category, thumbnails);
 
     if (result.success) {
-        res.status(201).json({ message: result.message, product: result.newProduct });
+        return res.status(201).json({ message: result.message, product: result.newProduct });
     } else {
-        res.status(400).json({ message: result.message });
+        return res.status(400).json({ message: result.message });
     }
 });
 
@@ -74,15 +83,17 @@ router.put('/:pid', (req, res) => {
     }
 });
 
-router.delete('/:pid', (req, res) => {
-    const id = req.params.pid;
-    const success = productManager.deleteProduct(id);
+router.delete('/:pid', async (req, res) => {
+    const productId = req.params.pid;
+    console.log('Deleting product with ID:', productId);
+    const result = await productManager.deleteProduct(productId);
 
-    if (success) {
+    if (result) {
         res.status(204).send();
     } else {
         res.status(404).send('Producto no encontrado');
     }
 });
+
 
 module.exports = router;

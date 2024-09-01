@@ -17,8 +17,8 @@
             {{#each products}}
             <div class="col-md-4 mb-4">
                 <div class="card">
-                    {{#if this.thumbnail}}
-                    <img src="{{this.thumbnail}}" class="card-img-top" alt="{{this.title}}">
+                    {{#if this.thumbnails.length}}
+                    <img src="{{this.thumbnails.[0]}}" class="card-img-top" alt="{{this.title}}">
                     {{/if}}
                     <div class="card-body">
                         <h5 class="card-title">{{this.title}}</h5>

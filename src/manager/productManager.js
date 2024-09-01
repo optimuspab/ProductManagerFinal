@@ -1,27 +1,23 @@
 const Product = require('../models/products');
-const { v4: uuidv4 } = require('uuid');
+const fs = require('fs');
+const path = require('path');
 
 class ProductManager {
     async addProduct(title, description, price, stock, category, thumbnails = []) {
-        if (!title || !description || !price || !stock || !category) {
-            const errorMsg = 'Todos los campos son obligatorios: title, description, price, stock y category.';
-            return { success: false, message: errorMsg };
-        }
-
-        const code = uuidv4();
-
-        const newProduct = new Product({
-            title, description, price, code, stock, category, thumbnails
-        });
-
+        console.log('Adding product:', { title, description, price, stock, category, thumbnails });
+    
+        const newProduct = new Product({ title, description, price, stock, category, thumbnails });
+        
         try {
             const savedProduct = await newProduct.save();
-            const successMsg = `Producto agregado con código ${code}`;
+            const successMsg = `Producto agregado con ID ${savedProduct._id}`;
+            console.log('Product saved:', savedProduct);
             return { success: true, message: successMsg, newProduct: savedProduct };
         } catch (error) {
+            console.error('Error saving product:', error.message);
             return { success: false, message: 'Error al agregar producto: ' + error.message };
         }
-    }
+    }         
 
     async getProducts(limit) {
         try {
@@ -61,12 +57,24 @@ class ProductManager {
 
     async deleteProduct(id) {
         try {
-            const result = await Product.findByIdAndDelete(id);
-            if (!result) {
+            const product = await Product.findByIdAndDelete(id);
+            if (!product) {
                 console.log(`El producto con el ID ${id} no se encuentra.`);
                 return false;
             }
-            console.log('Producto eliminado:', result);
+
+            if (product.thumbnails && product.thumbnails.length > 0) {
+                for (let thumbnail of product.thumbnails) {
+                    if (thumbnail.startsWith('/files/uploads/')) {
+                        const imagePath = path.join(__dirname, '..', 'public', thumbnail);
+                        if (fs.existsSync(imagePath)) {
+                            fs.unlinkSync(imagePath);
+                        }
+                    }
+                }
+            }
+
+            console.log('Producto eliminado:', product);
             return true;
         } catch (error) {
             console.error('Error al eliminar producto:', error);
