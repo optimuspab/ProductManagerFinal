@@ -19,16 +19,6 @@ class ProductManager {
         }
     }         
 
-    //async getProducts(limit) {
-    //    try {
-    //        const products = limit ? await Product.find().limit(limit) : await Product.find();
-    //        return products;
-    //    } catch (error) {
-    //        console.error('Error al obtener productos:', error);
-    //        return [];
-    //    }
-    //}
-
     async getProducts(filter = {}, options = {}) {
         try {
             const products = await Product.paginate(filter, options);

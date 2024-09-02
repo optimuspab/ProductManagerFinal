@@ -40,8 +40,8 @@
                             <input type="text" class="form-control" id="category" placeholder="Categoría" required>
                         </div>
                         <div class="mb-3">
-                            <label for="thumbnail" class="form-label">Imagen</label>
-                            <input class="form-control" type="file" id="thumbnail" name="thumbnail">
+                            <label for="thumbnails" class="form-label">Imágenes</label>
+                            <input class="form-control" type="file" id="thumbnails" name="thumbnails" multiple>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Agregar Producto</button>
                     </form>
@@ -88,7 +88,11 @@
             formData.append('price', document.getElementById('price').value);
             formData.append('stock', document.getElementById('stock').value);
             formData.append('category', document.getElementById('category').value);
-            formData.append('thumbnail', document.getElementById('thumbnail').files[0]);
+
+            const files = document.getElementById('thumbnail').files;
+            for (let i = 0; i < files.length; i++) {
+                formData.append('thumbnails', files[i]);
+            }
 
             fetch('/api/products', {
                 method: 'POST',
@@ -107,50 +111,11 @@
             document.getElementById('thumbnail').value = '';
         });
 
-        //socket.on('products', products => {
-        //    const productList = document.getElementById('products-list');
-        //    productList.innerHTML = '';
-        //    products.forEach(product => {
-        //        const productCard = `
-        //        <div class="col-md-4">
-        //            <div class="card mb-4">
-        //                <div class="card-body">
-        //                    <h5 class="card-title">${product.title}</h5>
-        //                    <p class="card-text">${product.description}</p>
-        //                    <p class="card-text"><strong>Precio: </strong>$${product.price}</p>
-        //                    <p class="card-text"><strong>Stock: </strong>${product.stock}</p>
-        //                    <p class="card-text"><strong>Categoría: </strong>${product.category}</p>
-        //                    ${product.thumbnails && product.thumbnails.length > 0 ? `<img src="${product.thumbnails[0]}" class="img-fluid mt-2" alt="${product.title}">` : ''}
-        //                    <button class="btn btn-danger mt-3 delete-product" data-id="${product._id}">Eliminar</button>
-        //                </div>
-        //            </div>
-        //        </div>`;
-        //        productList.innerHTML += productCard;
-        //    });
-        //
-        //    document.querySelectorAll('.delete-product').forEach(button => {
-        //        button.addEventListener('click', function () {
-        //            const productId = this.getAttribute('data-id');
-        //            console.log('Deleting product with ID:', productId);
-        //
-        //            fetch(`/api/products/${productId}`, {
-        //                method: 'DELETE'
-        //            })
-        //                .then(response => {
-        //                    if (response.ok) {
-        //                        socket.emit('product-deleted', productId);
-        //                    }
-        //                })
-        //                .catch(error => console.error('Error al eliminar el producto:', error));
-        //        });
-        //    });
-        //});
         socket.on('products', products => {
-            // Aquí deberías recibir un objeto que contiene 'docs' si estás usando paginación
             const productList = document.getElementById('products-list');
             productList.innerHTML = '';
 
-            const productArray = Array.isArray(products.docs) ? products.docs : products; // Manejar 'docs' o array directo
+            const productArray = Array.isArray(products.docs) ? products.docs : products;
 
             productArray.forEach(product => {
                 const productCard = `

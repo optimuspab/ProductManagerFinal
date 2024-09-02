@@ -1,12 +1,10 @@
 const Cart = require('../models/carts');
 
 class CartManager {
+    
     async createCart() {
-        const newCart = new Cart({
-            products: []  // Inicia con un carrito vacío
-        });
-
         try {
+            const newCart = new Cart();
             const savedCart = await newCart.save();
             return { success: true, cart: savedCart };
         } catch (error) {

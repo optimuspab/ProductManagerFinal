@@ -1,68 +1,102 @@
-const { Router } = require('express');
+const express = require('express');
+const router = express.Router();
 const productManager = require('../manager/productManager');
-
-const router = Router();
+const upload = require('../middlewares/multerConfig.js');
 
 router.get('/', async (req, res) => {
+    const { page = 1, limit = 10, sort, category, stock } = req.query;
+
+    const filter = {};
+    if (category) filter.category = category;
+    if (stock !== undefined) filter.stock = { $gt: 0 };
+
+    const options = {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        sort: sort === 'asc' ? { price: 1 } : sort === 'desc' ? { price: -1 } : {}
+    };
+
     try {
-        const { page = 1, limit = 10, sort, category, stock } = req.query;
-
-        const filter = {};
-        if (category) filter.category = category;
-        if (stock !== undefined) filter.stock = { $gt: 0 };
-
-        const options = {
-            page: parseInt(page),
-            limit: parseInt(limit),
-            sort: sort === 'asc' ? { price: 1 } : sort === 'desc' ? { price: -1 } : {}
-        };
-
         const products = await productManager.getProducts(filter, options);
 
-        const totalPages = Math.ceil(products.totalDocs / options.limit);
-        const prevPage = options.page > 1 ? options.page - 1 : null;
-        const nextPage = options.page < totalPages ? options.page + 1 : null;
-
-        const paginationPages = [];
-        for (let i = 1; i <= totalPages; i++) {
-            paginationPages.push({ number: i, active: i === options.page });
-        }
-
-        res.render('home', {
-            products: products.docs,
-            totalPages,
-            hasPrevPage: prevPage !== null,
-            hasNextPage: nextPage !== null,
-            prevLink: prevPage ? `/products?page=${prevPage}&limit=${options.limit}&sort=${sort}&category=${category}&stock=${stock}` : null,
-            nextLink: nextPage ? `/products?page=${nextPage}&limit=${options.limit}&sort=${sort}&category=${category}&stock=${stock}` : null,
-            paginationPages,
-            limit: options.limit
+        res.status(200).json({
+            status: 'success',
+            payload: products.docs,
+            totalPages: products.totalPages,
+            prevPage: products.prevPage,
+            nextPage: products.nextPage,
+            page: products.page,
+            hasPrevPage: products.hasPrevPage,
+            hasNextPage: products.hasNextPage,
+            prevLink: products.hasPrevPage ? `/api/products?page=${products.prevPage}&limit=${limit}&sort=${sort}&category=${category}&stock=${stock}` : null,
+            nextLink: products.hasNextPage ? `/api/products?page=${products.nextPage}&limit=${limit}&sort=${sort}&category=${category}&stock=${stock}` : null,
         });
     } catch (error) {
-        res.status(500).send('Error al cargar productos');
+        res.status(500).json({ status: 'error', message: 'Error al obtener productos: ' + error.message });
     }
 });
 
-router.get('/realtimeproducts', async (req, res) => {
-    try {
-        const products = await productManager.getProducts();
-        res.render('realTimeProducts', { products });
-    } catch (error) {
-        res.status(500).send('Error al cargar productos');
+router.get('/:pid', async (req, res) => {
+    const id = req.params.pid;
+    const result = await productManager.getProductById(id);
+
+    if (result.success) {
+        res.status(200).json({ product: result.product });
+    } else {
+        res.status(404).json({ message: result.message });
     }
 });
 
-router.get('/products/:pid', async (req, res) => {
-    try {
-        const productId = req.params.pid;
-        const result = await productManager.getProductById(productId);
-        if (result.success) {
-            res.render('productDetail', { product: result.product });
-        } else {
-            res.status(404).send('Producto no encontrado');
+router.post('/', upload.single('thumbnail'), async (req, res) => {
+    const products = Array.isArray(req.body) ? req.body : [req.body];
+    const results = [];
+
+    for (const productData of products) {
+        const { title, description, price, stock, category } = productData;
+        const thumbnail = req.file ? `/files/uploads/${req.file.filename}` : productData.thumbnail;
+
+        if (!title || !description || !price || !stock || !category) {
+            return res.status(400).json({ message: 'Todos los campos son obligatorios excepto la imagen.' });
         }
-    } catch (error) {
-        res.status(500).send('Error al cargar el producto');
+
+        const thumbnails = thumbnail ? [thumbnail] : [];
+
+        const result = await productManager.addProduct(title, description, price, stock, category, thumbnails);
+        if (result.success) {
+            results.push({
+                message: result.message,
+                product: result.newProduct,
+                id: result.newProduct._id
+            });
+        } else {
+            results.push({ message: result.message });
+        }
+    }
+
+    return res.status(201).json(results);
+});
+
+router.put('/:pid', async (req, res) => {
+    const id = req.params.pid;
+    const updatedInfo = req.body;
+
+    const result = await productManager.updateProduct(id, updatedInfo);
+
+    if (result.success) {
+        res.status(200).json({ message: result.message, product: result.product });
+    } else {
+        res.status(404).json({ message: result.message });
+    }
+});
+
+router.delete('/:pid', async (req, res) => {
+    const productId = req.params.pid;
+    const result = await productManager.deleteProduct(productId);
+
+    if (result) {
+        res.status(204).send();
+    } else {
+        res.status(404).send('Producto no encontrado');
     }
 });
 
