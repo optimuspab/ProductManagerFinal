@@ -66,14 +66,15 @@
                 fetch(`/api/carts/${cartId}/product/${productId}`, {
                     method: 'POST'
                 })
-                .then(response => response.text())
-                .then(data => {
-                    alert(`Producto ${productId} agregado al carrito`);
-                })
-                .catch(error => console.error('Error:', error));
+                    .then(response => response.text())
+                    .then(data => {
+                        alert(`Producto ${productId} agregado al carrito`);
+                    })
+                    .catch(error => console.error('Error:', error));
             });
         });
     </script>
+
 </body>
 
 </html>

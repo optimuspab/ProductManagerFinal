@@ -48,13 +48,15 @@ app.use(async (req, res, next) => {
             const cartResult = await cartManager.createCart();
             if (cartResult.success) {
                 req.session.cartId = cartResult.cart._id;
-                console.log('Nuevo carrito creado:', req.session.cartId);
+                console.log('Nuevo carrito guardado en session:', req.session.cartId);
             } else {
                 console.error('Error al crear el carrito:', cartResult.message);
             }
         } catch (error) {
             console.error('Error al crear el carrito:', error);
         }
+    } else {
+        console.log('Carrito ya existente en session:', req.session.cartId);
     }
     next();
 });

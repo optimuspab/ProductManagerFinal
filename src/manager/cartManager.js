@@ -5,13 +5,16 @@ class CartManager {
     async createCart() {
         try {
             const newCart = new Cart();
+            console.log("Nuevo carrito creado:", newCart);
+    
             const savedCart = await newCart.save();
+            console.log("Carrito guardado en la base de datos:", savedCart);
             return { success: true, cart: savedCart };
         } catch (error) {
             console.error('Error al crear el carrito:', error);
             return { success: false, message: 'Error al crear el carrito' };
         }
-    }
+    }    
 
     async getCartById(id) {
         try {
