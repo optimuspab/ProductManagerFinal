@@ -43,6 +43,7 @@
                             <label for="thumbnails" class="form-label">Imágenes</label>
                             <input class="form-control" type="file" id="thumbnails" name="thumbnails" multiple>
                         </div>
+
                         <button type="submit" class="btn btn-primary w-100">Agregar Producto</button>
                     </form>
                 </div>
@@ -89,7 +90,7 @@
             formData.append('stock', document.getElementById('stock').value);
             formData.append('category', document.getElementById('category').value);
 
-            const files = document.getElementById('thumbnail').files;
+            const files = document.getElementById('thumbnails').files;
             for (let i = 0; i < files.length; i++) {
                 formData.append('thumbnails', files[i]);
             }
@@ -100,8 +101,11 @@
             })
                 .then(response => response.json())
                 .then(data => {
-                    socket.emit('new-product', data.product);
-                });
+                    if (data.product) {
+                        socket.emit('new-product', data.product);
+                    }
+                })
+                .catch(error => console.error('Error al agregar el producto:', error));
 
             document.getElementById('title').value = '';
             document.getElementById('description').value = '';

@@ -17,7 +17,7 @@ class ProductManager {
             console.error('Error saving product:', error.message);
             return { success: false, message: 'Error al agregar producto: ' + error.message };
         }
-    }         
+    }
 
     async getProducts(filter = {}, options = {}) {
         try {
@@ -37,7 +37,6 @@ class ProductManager {
             return { docs: [], totalDocs: 0, totalPages: 0, page: 1, hasPrevPage: false, hasNextPage: false };
         }
     }
-    
 
     async getProductById(id) {
         try {
@@ -70,27 +69,32 @@ class ProductManager {
             const product = await Product.findByIdAndDelete(id);
             if (!product) {
                 console.log(`El producto con el ID ${id} no se encuentra.`);
-                return false;
+                return { success: false, message: `Producto con ID ${id} no encontrado` };
             }
-
+    
             if (product.thumbnails && product.thumbnails.length > 0) {
                 for (let thumbnail of product.thumbnails) {
                     if (thumbnail.startsWith('/files/uploads/')) {
                         const imagePath = path.join(__dirname, '..', 'public', thumbnail);
+                        console.log(`Intentando eliminar la imagen en: ${imagePath}`);
+    
                         if (fs.existsSync(imagePath)) {
                             fs.unlinkSync(imagePath);
+                            console.log(`Imagen eliminada: ${imagePath}`);
+                        } else {
+                            console.log(`La imagen no se encontró en la ruta: ${imagePath}`);
                         }
                     }
                 }
             }
-
+    
             console.log('Producto eliminado:', product);
-            return true;
+            return { success: true, message: 'Producto eliminado exitosamente' };
         } catch (error) {
             console.error('Error al eliminar producto:', error);
-            return false;
+            return { success: false, message: 'Error al eliminar producto: ' + error.message };
         }
-    }
+    }    
 }
 
 module.exports = new ProductManager();

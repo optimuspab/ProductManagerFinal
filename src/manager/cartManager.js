@@ -14,7 +14,7 @@ class CartManager {
             console.error('Error al crear el carrito:', error);
             return { success: false, message: 'Error al crear el carrito' };
         }
-    }    
+    }
 
     async getCartById(id) {
         try {
@@ -37,7 +37,7 @@ class CartManager {
             }
 
             const cart = cartResult.cart;
-            const productInCart = cart.products.find(p => p.product.toString() === productId);
+            const productInCart = cart.products.find(p => p.product._id.toString() === productId);
 
             if (productInCart) {
                 productInCart.quantity += 1;
@@ -59,10 +59,16 @@ class CartManager {
             if (!cartResult.success) {
                 return cartResult;
             }
-
+    
             const cart = cartResult.cart;
-            cart.products = cart.products.filter(p => p.product.toString() !== productId);
-
+            const initialProductCount = cart.products.length;
+    
+            cart.products = cart.products.filter(p => p.product._id.toString() !== productId);
+    
+            if (cart.products.length === initialProductCount) {
+                return { success: false, message: `Producto no encontrado en el carrito: ${productId}` };
+            }
+    
             await cart.save();
             return { success: true, message: 'Producto eliminado del carrito' };
         } catch (error) {
@@ -79,7 +85,7 @@ class CartManager {
             }
 
             const cart = cartResult.cart;
-            const productInCart = cart.products.find(p => p.product.toString() === productId);
+            const productInCart = cart.products.find(p => p.product._id.toString() === productId);
 
             if (productInCart) {
                 productInCart.quantity = quantity;
@@ -103,7 +109,10 @@ class CartManager {
             }
 
             const cart = cartResult.cart;
-            cart.products = products.map(p => ({ product: p.product, quantity: p.quantity }));
+            cart.products = products.map(p => ({
+                product: p.product.toString(),
+                quantity: p.quantity
+            }));
 
             await cart.save();
             return { success: true, message: 'Carrito actualizado' };

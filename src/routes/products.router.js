@@ -47,34 +47,26 @@ router.get('/:pid', async (req, res) => {
     }
 });
 
-router.post('/', upload.single('thumbnail'), async (req, res) => {
-    const products = Array.isArray(req.body) ? req.body : [req.body];
-    const results = [];
+router.post('/', upload.array('thumbnails', 10), async (req, res) => {
+    const { title, description, price, stock, category } = req.body;
 
-    for (const productData of products) {
-        const { title, description, price, stock, category } = productData;
-        const thumbnail = req.file ? `/files/uploads/${req.file.filename}` : productData.thumbnail;
-
-        if (!title || !description || !price || !stock || !category) {
-            return res.status(400).json({ message: 'Todos los campos son obligatorios excepto la imagen.' });
-        }
-
-        const thumbnails = thumbnail ? [thumbnail] : [];
-
-        const result = await productManager.addProduct(title, description, price, stock, category, thumbnails);
-        if (result.success) {
-            results.push({
-                message: result.message,
-                product: result.newProduct,
-                id: result.newProduct._id
-            });
-        } else {
-            results.push({ message: result.message });
-        }
+    if (!title || !description || !price || !stock || !category) {
+        return res.status(400).json({ message: 'Todos los campos son obligatorios excepto las imágenes.' });
     }
 
-    return res.status(201).json(results);
-});
+    const thumbnails = req.files.map(file => `/files/uploads/${file.filename}`);
+
+    const result = await productManager.addProduct(title, description, price, stock, category, thumbnails);
+    if (result.success) {
+        return res.status(201).json({
+            message: result.message,
+            product: result.newProduct,
+            id: result.newProduct._id
+        });
+    } else {
+        return res.status(500).json({ message: result.message });
+    }
+})
 
 router.put('/:pid', async (req, res) => {
     const id = req.params.pid;

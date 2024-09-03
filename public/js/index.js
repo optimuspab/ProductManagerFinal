@@ -13,16 +13,23 @@ socket.on('product-deleted', (productId) => {
 });
 
 const addProductForm = document.getElementById('addProductForm');
-if (addProductForm) {
+
+if (addProductForm && !addProductForm.dataset.listenerAdded) {
     addProductForm.addEventListener('submit', (event) => {
         event.preventDefault();
+        
         const productData = {
             title: document.getElementById('productName').value,
             price: document.getElementById('productPrice').value,
         };
         socket.emit('new-product', productData);
+
+        addProductForm.reset();
     });
+
+    addProductForm.dataset.listenerAdded = true;
 }
+
 
 
 

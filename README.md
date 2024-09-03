@@ -39,7 +39,7 @@ Este es el proyecto final de la Comisión 70095 de Programación Backend I, el c
   GET /api/products?limit=5&page=2&sort=asc&query=category:Electronics
      ```
 
-  **Ejemplo de petición:**
+  **Ejemplo de respuesta:**
   ```json
   {
     "status": "success",
