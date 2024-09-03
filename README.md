@@ -1,20 +1,275 @@
-# Comisión 70095 - Programación Backend I: Desarrollo Avanzado de Backend - Segunda Entrega
+# Comisión 70095 - Programación Backend I: Proyecto Final
 
 ## Descripción del Proyecto
 
-Esta es la continuación del proyecto inicial que desarrolla un servidor basado en Node.js y Express, el cual escuche en el puerto 8080 y disponga de dos grupos de rutas: `/products` y `/carts`. En esta segunda entrega, se ha ampliado el proyecto para incluir la integración de Handlebars y WebSocket.
+Este es el proyecto final de la Comisión 70095 de Programación Backend I, el cual engloba las funcionalidades desarrolladas en las dos entregas anteriores y expande su funcionalidad mediante la profesionalización de la base de datos utilizando MongoDB.
 
-### Nuevos Requisitos
+- **Primer entrega:**
+  - https://github.com/optimuspab/ProductManager
 
-- **Configuración de Handlebars:**
-  - Se ha integrado el motor de plantillas Handlebars para renderizar vistas del servidor.
-  
-- **Configuración de WebSocket:**
-  - Se ha instalado y configurado el servidor de `socket.io` para permitir la comunicación en tiempo real entre el servidor y el cliente.
-  
-- **Nuevas Vistas:**
-  - **`home.handlebars`:** Muestra una lista de todos los productos agregados hasta el momento.
-  - **`realTimeProducts.handlebars`:** Muestra la lista de productos y se actualiza automáticamente en tiempo real mediante WebSocket.
+- **Segunda entrega:**
+  - https://github.com/optimuspab/WebSocketsProductManager
+
+### Características del Proyecto
+
+- **Sistema de Persistencia con MongoDB:**
+  - MongoDB ha sido integrado como sistema de persistencia principal, reemplazando el uso del file system.
+  - Los endpoints para productos y carritos han sido ajustados para trabajar con MongoDB.
+
+- **Consultas Profesionales de Productos:**
+  - Se ha mejorado la gestión de productos con filtros avanzados, paginación y opciones de ordenamiento.
+  - Las consultas permiten filtrar productos por categoría o disponibilidad y ordenarlos por precio en orden ascendente o descendente.
+
+- **Gestión Avanzada de Carritos:**
+  - Se han añadido nuevos endpoints para la gestión avanzada de carritos, incluyendo la posibilidad de eliminar productos, actualizar el carrito completo o solo la cantidad de productos, y eliminar todos los productos del carrito.
+  - El carrito ahora referencia directamente a los productos mediante ObjectId, y al consultarlo, se utiliza `populate` para obtener la información completa del producto.
+
+### Rutas de Productos
+
+#### Base URL: `/api/products/`
+
+- **GET `/`:** Devuelve una lista paginada de productos con soporte para filtros y ordenamiento. Soporta los siguientes query params:
+  - `limit`: Número de productos por página (default: 10).
+  - `page`: Número de página (default: 1).
+  - `sort`: Orden por precio (`asc` o `desc`).
+  - `query`: Filtro por categoría o disponibilidad.
+
+  **Ejemplo de petición:**
+  ```http
+  GET /api/products?limit=5&page=2&sort=asc&query=category:Electronics
+     ```
+
+  **Ejemplo de petición:**
+  ```json
+  {
+    "status": "success",
+    "payload": [
+      {
+        "_id": "66d4b02994c9aa10d900d82e",
+        "title": "Smartphone",
+        "description": "Latest model",
+        "price": 699.99,
+        "stock": 50,
+        "category": "Electronics",
+        "thumbnails": ["/files/uploads/phone.jpg"]
+      },
+      {
+        "_id": "66d4b02994c9aa10d900d82f",
+        "title": "Laptop",
+        "description": "High performance laptop",
+        "price": 1299.99,
+        "stock": 20,
+        "category": "Electronics",
+        "thumbnails": ["/files/uploads/laptop.jpg"]
+      }
+    ],
+    "totalPages": 3,
+    "prevPage": 1,
+    "nextPage": 3,
+    "page": 2,
+    "hasPrevPage": true,
+    "hasNextPage": true,
+    "prevLink": "/api/products?limit=5&page=1&sort=asc&query=category:Electronics",
+    "nextLink": "/api/products?limit=5&page=3&sort=asc&query=category:Electronics"
+  }
+  ```
+
+### GET `/products/:pid`: Devuelve los detalles de un producto específico.
+
+**Ejemplo de petición:**
+
+```http
+GET /api/products/66d4b02994c9aa10d900d82e
+ ```
+
+**Ejemplo de respuesta:**
+
+ ```json
+{
+  "status": "success",
+  "product": {
+    "_id": "66d4b02994c9aa10d900d82e",
+    "title": "Smartphone",
+    "description": "Latest model",
+    "price": 699.99,
+    "stock": 50,
+    "category": "Electronics",
+    "thumbnails": ["/files/uploads/phone.jpg"]
+  }
+}
+ ```
+### Rutas de Carritos
+
+#### Base URL: `/api/carts/`
+
+- **POST /:** Crea un nuevo carrito.
+
+**Ejemplo de petición:**
+
+```http
+POST /api/carts/
+ ```
+
+**Ejemplo de respuesta:**
+
+```json
+{
+  "success": true,
+  "cart": {
+    "_id": "66d51d702d868867cf46f728",
+    "products": [],
+    "__v": 0
+  }
+}
+```
+
+- **GET /:cid:** Devuelve los productos de un carrito específico.
+
+**Ejemplo de petición:**
+
+```http
+GET /api/carts/66d51d702d868867cf46f728
+ ```
+
+**Ejemplo de respuesta:**
+
+```json
+{
+  "success": true,
+  "products": [
+    {
+      "product": {
+        "_id": "66d4b02994c9aa10d900d82e",
+        "title": "Smartphone",
+        "price": 699.99
+      },
+      "quantity": 1
+    },
+    {
+      "product": {
+        "_id": "66d4fd1f98319027f8781ba3",
+        "title": "Laptop",
+        "price": 1299.99
+      },
+      "quantity": 1
+    }
+  ]
+}
+```
+
+- **POST /:cid/product/:pid:** Agrega un producto al carrito.
+
+**Ejemplo de petición:**
+
+```http
+POST /api/carts/66d51d702d868867cf46f728/product/66d4b02994c9aa10d900d82e
+```
+
+**Ejemplo de respuesta:**
+
+```json
+{
+  "success": true,
+  "message": "Producto agregado al carrito"
+}
+```
+
+- **DELETE /:cid/products/:pid:** Elimina un producto del carrito.
+
+**Ejemplo de petición:**
+
+```http
+DELETE /api/carts/66d51d702d868867cf46f728/products/66d4b02994c9aa10d900d82e
+```
+
+**Ejemplo de respuesta:**
+
+```json
+{
+  "success": true,
+  "message": "Producto eliminado del carrito"
+}
+```
+
+- **PUT /:cid:** Actualiza el carrito completo.
+
+**Ejemplo de petición:**
+
+```http
+PUT /api/carts/66d51d702d868867cf46f728
+Content-Type: application/json
+```
+
+```json
+{
+  "products": [
+    { "product": "66d4b02994c9aa10d900d82e", "quantity": 2 },
+    { "product": "66d4fd1f98319027f8781ba3", "quantity": 1 }
+  ]
+}
+```
+
+**Ejemplo de respuesta:**
+
+```json
+{
+  "success": true,
+  "message": "Carrito actualizado"
+}
+```
+
+- **PUT /:cid/products/:pid:** Actualiza solo la cantidad de un producto en el carrito.
+
+**Ejemplo de petición:**
+
+```http
+PUT /api/carts/66d51d702d868867cf46f728/products/66d4b02994c9aa10d900d82e
+Content-Type: application/json
+```
+```json
+{
+  "quantity": 5
+}
+```
+
+**Ejemplo de respuesta:**
+
+```json
+{
+  "success": true,
+  "message": "Cantidad actualizada"
+}
+```
+
+- **DELETE /:cid:** Elimina todos los productos del carrito.
+
+**Ejemplo de petición:**
+
+```http
+DELETE /api/carts/66d51d702d868867cf46f728
+```
+**Ejemplo de respuesta:**
+
+```json
+{
+  "success": true,
+  "message": "Carrito eliminado"
+}
+```
+
+## Vistas con Handlebars
+
+- **Ruta:** `/products`
+- **Descripción:** Muestra todos los productos con paginación. Cada producto tiene un botón para ver detalles o agregar directamente al carrito.
+
+- **Ruta:** `/products/:pid`
+- **Descripción:** Muestra la información detallada de un producto.
+
+- **Ruta:** `/carts/:cid`
+- **Descripción:** Muestra los productos en un carrito específico.
+
+## Persistencia de la Información
+La persistencia de la información se maneja a través de MongoDB, almacenando los productos y carritos en colecciones dedicadas.
 
 ## Instalación
 
@@ -35,53 +290,19 @@ Sigue estos pasos para clonar el repositorio, instalar las dependencias y ejecut
     npm install
     ```
 
-4. Inicia el servidor:
+4. Configura las variables de entorno en un archivo .env:
+    ```sh
+    MONGO_URI=tu_uri_de_mongodb
+    MONGO_CERT_PATH=./config/cert.pem
+    SECRET_KEY=tu_clave_secreta
+    Inicia el servidor:
+    ```
+5. Inicia el servidor:
     ```sh
     npm start
     ```
 
 El servidor se ejecutará en `http://localhost:8080`.
 
-## Rutas de Productos
-
-### Base URL: `/api/products/`
-
-(Se mantiene la misma configuración de la primer entrega https://github.com/optimuspab/ProductManager.)
-
-## Rutas de Carritos
-
-### Base URL: `/api/carts/`
-
-(Se mantiene la misma configuración del primer repositorio https://github.com/optimuspab/ProductManager.)
-
-## Vistas con Handlebars
-
-### Home View
-
-- **Ruta:** `/home`
-- **Descripción:** Muestra una lista de todos los productos utilizando la plantilla `home.handlebars`.
-
-### Real-Time Products View
-
-- **Ruta:** `/realtimeproducts`
-- **Descripción:** Muestra una lista de productos en tiempo real utilizando la plantilla `realTimeProducts.handlebars`.
-- **Características:**
-  - Utiliza WebSocket para actualizar automáticamente la lista de productos cuando se crean o eliminan productos.
-  - Incluye un formulario para agregar nuevos productos a través de WebSocket.
-
-## Persistencia de la Información
-
-La persistencia de la información se implementa utilizando el file system, con los archivos `productos.json` y `carrito.json` que respaldan la información.
-
 ## Ejemplo de Uso
-
-Puedes utilizar Postman o cualquier cliente HTTP para interactuar con las rutas de productos y carritos. La vista en tiempo real y la vista de home están disponibles en el navegador.
-
-### Ejemplo de Uso con WebSocket
-
-Para la vista en tiempo real (`/realtimeproducts`), se puede usar el formulario incluido para agregar nuevos productos. La actualización de la lista de productos se realiza automáticamente gracias a WebSocket.
-
-## Notas Adicionales
-
-- La integración de WebSocket permite que las actualizaciones en la lista de productos se reflejen en tiempo real sin necesidad de recargar la página.
-- La vista `home.handlebars` permite ver todos los productos estáticos en la página principal del proyecto.
+Puedes utilizar Postman o cualquier cliente HTTP para interactuar con las rutas de productos y carritos. Además, las vistas en tiempo real y de home están disponibles en el navegador.

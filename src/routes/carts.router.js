@@ -43,4 +43,56 @@ router.post('/:cid/product/:pid', async (req, res) => {
     }
 });
 
+router.delete('/:cid/products/:pid', async (req, res) => {
+    const cartId = req.params.cid;
+    const productId = req.params.pid;
+
+    const result = await cartManager.removeProductFromCart(cartId, productId);
+
+    if (result.success) {
+        res.status(200).send(result.message);
+    } else {
+        res.status(404).send(result.message);
+    }
+});
+
+router.put('/:cid/products/:pid', async (req, res) => {
+    const cartId = req.params.cid;
+    const productId = req.params.pid;
+    const { quantity } = req.body;
+
+    const result = await cartManager.updateProductQuantity(cartId, productId, quantity);
+
+    if (result.success) {
+        res.status(200).send(result.message);
+    } else {
+        res.status(404).send(result.message);
+    }
+});
+
+router.put('/:cid', async (req, res) => {
+    const cartId = req.params.cid;
+    const products = req.body.products;
+
+    const result = await cartManager.updateCart(cartId, products);
+
+    if (result.success) {
+        res.status(200).send(result.message);
+    } else {
+        res.status(404).send(result.message);
+    }
+});
+
+router.delete('/:cid', async (req, res) => {
+    const cartId = req.params.cid;
+
+    const result = await cartManager.clearCart(cartId);
+
+    if (result.success) {
+        res.status(200).send(result.message);
+    } else {
+        res.status(404).send(result.message);
+    }
+});
+
 module.exports = router;
