@@ -9,17 +9,44 @@ const port = process.env.PORT || 8080;
 const server = createServer(app);
 const io = new Server(server);
 
-app.use('/', viewsRouter); // Sin pasar `io`
+app.use('/', viewsRouter);
 
+//io.on('connection', async (socket) => {
+//    console.log('Nuevo cliente conectado');
+//
+//    socket.emit('products', await productManager.getProducts());
+//
+//    socket.on('new-product', async (data) => {
+//        const newProduct = await productManager.addProduct(data.title, data.description, data.price, data.stock, data.category, data.thumbnails);
+//        if (newProduct.success) {
+//            io.emit('products', await productManager.getProducts());
+//        } else {
+//            console.log(newProduct.message);
+//        }
+//    });
+//
+//    socket.on('delete-product', async (productId) => {
+//        const success = await productManager.deleteProduct(productId);
+//        if (success) {
+//            io.emit('products', await productManager.getProducts());
+//        }
+//    });
+//
+//    socket.on('disconnect', () => {
+//        console.log('Cliente desconectado');
+//    });
+//});
 io.on('connection', async (socket) => {
     console.log('Nuevo cliente conectado');
 
-    socket.emit('products', await productManager.getProducts());
+    const products = await productManager.getProducts();
+    socket.emit('products', products.docs); // Emitiendo solo la lista de productos
 
     socket.on('new-product', async (data) => {
         const newProduct = await productManager.addProduct(data.title, data.description, data.price, data.stock, data.category, data.thumbnails);
         if (newProduct.success) {
-            io.emit('products', await productManager.getProducts());
+            const updatedProducts = await productManager.getProducts();
+            io.emit('products', updatedProducts.docs);
         } else {
             console.log(newProduct.message);
         }
@@ -28,7 +55,8 @@ io.on('connection', async (socket) => {
     socket.on('delete-product', async (productId) => {
         const success = await productManager.deleteProduct(productId);
         if (success) {
-            io.emit('products', await productManager.getProducts());
+            const updatedProducts = await productManager.getProducts();
+            io.emit('products', updatedProducts.docs);
         }
     });
 
@@ -36,6 +64,7 @@ io.on('connection', async (socket) => {
         console.log('Cliente desconectado');
     });
 });
+
 
 server.listen(port, () => {
     console.log(`Server is running on port ${port}`);

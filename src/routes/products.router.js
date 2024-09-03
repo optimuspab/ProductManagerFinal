@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const productManager = require('../manager/productManager');
+const upload = require('../middlewares/multerConfig.js');
 
 router.get('/', async (req, res) => {
     const { page = 1, limit = 10, sort, category, stock } = req.query;
@@ -18,67 +19,81 @@ router.get('/', async (req, res) => {
     try {
         const products = await productManager.getProducts(filter, options);
 
-        const totalPages = Math.ceil(products.totalDocs / options.limit);
-        const prevPage = options.page > 1 ? options.page - 1 : null;
-        const nextPage = options.page < totalPages ? options.page + 1 : null;
-
         res.status(200).json({
             status: 'success',
             payload: products.docs,
-            totalPages: totalPages,
-            prevPage: prevPage,
-            nextPage: nextPage,
-            page: options.page,
-            hasPrevPage: prevPage !== null,
-            hasNextPage: nextPage !== null,
-            prevLink: prevPage ? `/api/products?page=${prevPage}&limit=${options.limit}&sort=${sort}&category=${category}&stock=${stock}` : null,
-            nextLink: nextPage ? `/api/products?page=${nextPage}&limit=${options.limit}&sort=${sort}&category=${category}&stock=${stock}` : null,
+            totalPages: products.totalPages,
+            prevPage: products.prevPage,
+            nextPage: products.nextPage,
+            page: products.page,
+            hasPrevPage: products.hasPrevPage,
+            hasNextPage: products.hasNextPage,
+            prevLink: products.hasPrevPage ? `/api/products?page=${products.prevPage}&limit=${limit}&sort=${sort}&category=${category}&stock=${stock}` : null,
+            nextLink: products.hasNextPage ? `/api/products?page=${products.nextPage}&limit=${limit}&sort=${sort}&category=${category}&stock=${stock}` : null,
         });
     } catch (error) {
         res.status(500).json({ status: 'error', message: 'Error al obtener productos: ' + error.message });
     }
 });
 
-router.get('/:pid', (req, res) => {
-    const id = parseInt(req.params.pid);
-    const result = productManager.getProductById(id);
+router.get('/:pid', async (req, res) => {
+    const id = req.params.pid;
+    const result = await productManager.getProductById(id);
 
     if (result.success) {
-        res.status(200).json({ id: id, product: result.product });
+        res.status(200).json({ product: result.product });
     } else {
-        res.status(404).send(result.message);
+        res.status(404).json({ message: result.message });
     }
 });
 
-router.post('/', (req, res) => {
-    const { title, description, price, code, stock, category, thumbnails } = req.body;
-    const result = productManager.addProduct(title, description, price, code, stock, category, thumbnails);
+router.post('/', upload.single('thumbnail'), async (req, res) => {
+    const products = Array.isArray(req.body) ? req.body : [req.body];
+    const results = [];
 
-    if (result.success) {
-        res.status(201).json({ message: result.message, product: result.newProduct });
-    } else {
-        res.status(400).json({ message: result.message });
+    for (const productData of products) {
+        const { title, description, price, stock, category } = productData;
+        const thumbnail = req.file ? `/files/uploads/${req.file.filename}` : productData.thumbnail;
+
+        if (!title || !description || !price || !stock || !category) {
+            return res.status(400).json({ message: 'Todos los campos son obligatorios excepto la imagen.' });
+        }
+
+        const thumbnails = thumbnail ? [thumbnail] : [];
+
+        const result = await productManager.addProduct(title, description, price, stock, category, thumbnails);
+        if (result.success) {
+            results.push({
+                message: result.message,
+                product: result.newProduct,
+                id: result.newProduct._id
+            });
+        } else {
+            results.push({ message: result.message });
+        }
     }
+
+    return res.status(201).json(results);
 });
 
-router.put('/:pid', (req, res) => {
-    const id = parseInt(req.params.pid);
+router.put('/:pid', async (req, res) => {
+    const id = req.params.pid;
     const updatedInfo = req.body;
 
-    const result = productManager.updateProduct(id, updatedInfo);
+    const result = await productManager.updateProduct(id, updatedInfo);
 
     if (result.success) {
         res.status(200).json({ message: result.message, product: result.product });
     } else {
-        res.status(404).send(result.message);
+        res.status(404).json({ message: result.message });
     }
 });
 
-router.delete('/:pid', (req, res) => {
-    const id = req.params.pid;
-    const success = productManager.deleteProduct(id);
+router.delete('/:pid', async (req, res) => {
+    const productId = req.params.pid;
+    const result = await productManager.deleteProduct(productId);
 
-    if (success) {
+    if (result) {
         res.status(204).send();
     } else {
         res.status(404).send('Producto no encontrado');
